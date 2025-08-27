@@ -1,0 +1,49 @@
+#include  "bsp.h"
+
+             NAME   MAIN
+             PUBLIC state,main,Rising_leds_state,Rotating_leds_state,state0
+             EXTERN SysConfig,ClrLEDs,IncLED,RotLED ,delay
+             EXTERN PrintLEDs,ReadSWs,PrintSWs2LEDs,ClrLEDs,PWM_alt
+             
+;----------------------------------------------------------------------------------
+             ORG      DataSegStart         ; Begins a DATA segment
+             
+state               DW   0                        ; state variable
+Rising_leds_state   DW   0
+Rotating_leds_state DB 0x80
+
+;-------------------------------------------------------------------------------------          
+             ;RSEG    CSTACK    ; shows to compiler where is the RAM populating limit
+                                ; can be ignored
+;-------------------------------------------------------------------------------------
+             ORG     CodeSegStart       ; Program Reset = Begins a CODE segment
+             
+main         mov.w   #StackTosStart,SP  ; Initialize stack pointer to the RAM end 
+             call    #SysConfig
+             clr     state              ; set to idle state at the beginning
+;---------------------- FSM_loop -------------------------------------
+state0       cmp     #0x00,state         ;check if state0           
+             jnz     state1
+             call    #ClrLEDs
+             bis.w   #CPUOFF+GIE,SR 
+
+state1       cmp     #0x01,state         ;check if state1
+             jnz     state2
+             PUSH    Rising_leds_state          
+             call    #IncLED           ;infinite function 
+             EINT
+            
+state2       cmp     #0x02,state         ;check if state2
+             jnz     state3 
+             PUSH    Rotating_leds_state
+             call    #RotLED            ;infinite function
+             EINT
+
+state3       cmp     #0x03,state         ;check if state3
+             jnz     state0 
+             call    #PWM_alt            ;infinite function
+            
+
+             jmp     state0       
+                 
+             END

@@ -1,0 +1,59 @@
+#include  "bsp.h"
+
+            MODULE BSP
+            PUBLIC GPIOconfig,TIMERconfig,ADCconfig
+            EXTERN main,PBs_handler
+            
+            RSEG   CODE                    
+;-----------------------------------------------------------------------------  
+;           GPIO congiguration
+;-----------------------------------------------------------------------------
+GPIOconfig 
+             mov.w   #WDTPW+WDTHOLD,&WDTCTL   ; hold watchdog timer
+            ; PushButtons Setup
+             bic.b   #0xff,PBsArrPortSel
+             bic.b   #0x0f,PBsArrPortDir
+             bis.b   #0x80,PBsArrPortDir
+             
+             bic.b   #0xff,PBsArrPortout
+             
+             bis.b   #0x03,PBsArrIntEdgeSel ; pull-up 
+             bic.b   #0x0c,PBsArrIntEdgeSel ; pull-down
+             bis.b   #0x07,PBsArrIntEn      ;---check
+             bic.b   #0xff,PBsArrIntPend    ; clear pending interrupts
+             
+             ;-------------not relevant----------------
+             ; Switches Setup
+             ;bic.b   #0x0F,SWsArrPortSel
+             ;bic.b   #0x0F,SWsArrPortDir
+             ;------------------------------------------
+             ; LEDs Setup
+             bic.b   #0xFF,LEDsArrPortSel ; GPIO capability
+             bis.b   #0xFF,LEDsArrPortDir ; output dir
+             clr.b   LEDsArrPort    ; clear LEDs
+             
+             ret
+;------------------------------------------------------------------------------------- 
+;            Timers congiguration 
+;-------------------------------------------------------------------------------------
+TIMERconfig 
+            nop   ;write here timers congiguration code
+
+            ret
+;-------------------------------------------------------------------------------------- 
+;            ADC congiguration 
+;--------------------------------------------------------------------------------------
+ADCconfig
+            nop ; write here ADC congiguration code
+
+            ret
+;---------------------------------------------------------------------------------------                  
+             COMMON  INTVEC   ; Interrupt Vectors-Begins a common segment name of INTVEC 
+;--------------------------------------------------------------------------------------
+             ORG     PORT2_VECTOR       ;PORT2 Interrupt Vector
+             DW      PBs_handler        ; interrupt handler = ISR
+             ORG     RESET_VECTOR       ; MSP430 RESET Vector
+             DW      main  
+            
+             ENDMOD
+             END

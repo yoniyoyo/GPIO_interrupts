@@ -1,0 +1,102 @@
+#include  "bsp.h"
+
+             MODULE API
+             PUBLIC IncLED,RotLED ,PrintSWs2LEDs,PWM_alt
+             EXTERN Print2LEDs,ReadSWs,Delay500msec ,Rising_leds_state,Rotating_leds_state,state,delay,ClrLEDs
+            
+             RSEG   CODE
+;-------------------------------------------------------------
+;             LEDs Increment counting 
+;-------------------------------------------------------------
+IncLED       pop     R10    ;save ret addr
+             pop     R11    ; Rising_leds_state
+             mov.b   R11,LEDsArrPort
+             mov     #20,R13
+L10s         inc.b   LEDsArrPort
+             call    #Delay500msec 
+             dec     R13
+             jnz     L10s
+             mov.b   LEDsArrPort, Rising_leds_state
+             mov     #0, state
+             call    #ClrLEDs
+             PUSH    R10
+             ret
+;-------------------------------------------------------------
+;             LEDs Rotating
+;-------------------------------------------------------------
+RotLED       pop     R10    ;save ret addr
+             pop.b   R11    ; Rotating_leds_state
+             mov.b   R11,LEDsArrPort
+             mov     #10,R13
+L10s2        call    #Delay500msec
+             bic     #1, R2    ;check !
+             bit.b   #1,LEDsArrPort
+             jz      nc
+             bis     #1, R2    
+nc           RRC.B   LEDsArrPort
+             dec     R13
+             jnz     L10s2
+             mov.b   LEDsArrPort, Rotating_leds_state
+             mov     #0, state
+             call    #ClrLEDs
+             PUSH    R10
+             ret 
+
+
+
+;-------------------------------------------------------------
+;               PWM_alt
+;-------------------------------------------------------------
+PWM_alt EINT
+        mov   #5000, R13
+loopi   push #241  ;ontime
+        push #88  ;offtime
+        call #PWM
+        dec R13
+        jnz loopi 
+        mov   #10000, R13
+loopi2  push #117  ;ontime
+        push #36  ;offtime
+        call #PWM
+        dec R13
+        jnz loopi2
+        
+        jmp PWM_alt
+             
+             ret
+             
+;-------------------------------------------------------------
+;               PWM
+;-------------------------------------------------------------
+PWM:
+            pop   R10 ; re addr
+            pop   R11 ; off time
+            pop   R12 ; on time
+            
+            bis.b    #10000000b, PBsArrPortout
+            PUSH     R12  
+            CALL     #delay     
+            bic.b    #10000000b,PBsArrPortout
+            PUSH     R11
+            CALL     #delay
+            push     R10
+            RET
+           
+             
+ 
+              
+;-------------------------------------------------------------
+;            Print SWs value onto LEDs
+;-------------------------------------------------------------
+PrintSWs2LEDs 
+             ;R4=ReadSWs()
+             call   #ReadSWs
+             pop    R4
+             ;Print2LEDs(R4)
+             push   R4
+             call   #Print2LEDs
+             
+             ret
+;-------------------------------------------------------------
+             ENDMOD    
+             END
